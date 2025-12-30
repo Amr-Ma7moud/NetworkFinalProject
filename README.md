@@ -12,7 +12,6 @@
 | **Course Name** | Computer Network CNC311 |
 | **Students** | Amr Sahmoud Soliman (320230204) |
 | | Ahmed Abdelrahman (320230152) |
-| | Ahmed Abdelmaksoud (320230213) |
 | **Date** | December 29, 2025 |
 
 ---
@@ -103,20 +102,21 @@ The network was built and tested using Cisco Packet Tracer simulation software t
 │                         AS: 65001                                    │
 │                                                                      │
 │    Serial3/0           Fa1/0              Serial2/0         Fa4/0   │
-│   11.11.11.1       192.168.0.1           12.12.12.1       10.0.0.1  │
+│   12.12.12.1       192.168.0.1           11.11.11.1       10.0.0.1  │
 └───────┬────────────────┬─────────────────────┬────────────────┬─────┘
         │                │                     │                │
-   11.11.11.2      [Switch]              12.12.12.2        10.0.0.2
+   12.12.12.2      [Switch]              11.11.11.2        10.0.0.2
         │           /│\                        │                │
    [R1-Green]    PCs(Yellow)             [R2-Blue]      [SDN-Controller]
    Area 1        Area 0                  Area 2              │
-        │                                      │          Fa0/1│172.16.1.1
-   Fa0/0│192.168.1.1                   Fa0/0│192.168.2.1      │
+        │                                      │          Fa0/1│192.168.4.1
+   Fa0/0│192.168.2.1                   Fa0/0│192.168.1.1      │
         │                                      │         [SDN-Switch]
    [Switch]                              [Switch]         /   │   \
         │                                      │      [PC1] [PC2] [PC3]
     [PC1-Green]                          [PC2-Blue]    SDN Segment
 ```
+![Network Topology](assets/Network.png)
 
 ### 3.2 IP Addressing Scheme
 
@@ -124,18 +124,18 @@ The network was built and tested using Cisco Packet Tracer simulation software t
 
 | Router | Interface | IP Address | Subnet Mask | Purpose |
 |--------|-----------|------------|-------------|---------|
-| Main | Fa0/0 | 10.10.10.2 | 255.255.255.252 | To ISP |
+| Main | Fa0/0 | 10.10.10.2 | 255.255.255.0 | To ISP |
 | Main | Fa1/0 | 192.168.0.1 | 255.255.255.0 | Yellow LAN |
 | Main | Serial2/0 | 12.12.12.1 | 255.255.255.0 | To R2-Blue |
 | Main | Serial3/0 | 11.11.11.1 | 255.255.255.0 | To R1-Green |
-| Main | Fa4/0 | 10.0.0.1 | 255.255.255.252 | To SDN |
+| Main | Fa4/0 | 10.0.0.1 | 255.255.255.0 | To SDN |
 | R1-Green | Fa0/0 | 192.168.1.1 | 255.255.255.0 | Green LAN |
 | R1-Green | Serial2/0 | 11.11.11.2 | 255.255.255.0 | To Main |
 | R2-Blue | Fa0/0 | 192.168.2.1 | 255.255.255.0 | Blue LAN |
 | R2-Blue | Serial2/0 | 12.12.12.2 | 255.255.255.0 | To Main |
-| ISP | Fa0/0 | 10.10.10.1 | 255.255.255.252 | To Main |
+| ISP | Fa0/0 | 10.10.10.1 | 255.255.255.0 | To Main |
 | ISP | Loopback0 | 8.8.8.1 | 255.255.255.0 | Internet Simulation |
-| SDN-Controller | Fa0/0 | 10.0.0.2 | 255.255.255.252 | To Main |
+| SDN-Controller | Fa0/0 | 10.0.0.2 | 255.255.255.0 | To Main |
 | SDN-Controller | Fa1/0 | 172.16.1.1 | 255.255.255.0 | SDN LAN |
 
 #### PC Addresses
@@ -299,7 +299,7 @@ ISP(config-router)# exit
     │   • 192.168.0.0   │           │   • 8.8.8.0       │
     │   • 192.168.1.0   │           │                   │
     │   • 192.168.2.0   │           │                   │
-    │   • 172.16.1.0    │           │                   │
+    │   • 192.168.4.0   │           │                   │
     └───────────────────┘           └───────────────────┘
 ```
 
@@ -369,10 +369,10 @@ ISP(config-router)# exit
               │  │ PC3: Blocked  │  │
               │  └───────────────┘  │
               │                     │
-              │   172.16.1.1        │
+              │   192.168.4.1        │
               └──────────┬──────────┘
                          │
-                         │ 172.16.1.0/24
+                         │ 192.168.4.0/24
                          │
               ┌──────────┴──────────┐
               │     SDN-SWITCH      │
@@ -398,14 +398,14 @@ ISP(config-router)# exit
 SDN-Controller# configure terminal
 SDN-Controller(config)# ip access-list extended SDN_POLICY
 
-! Rule 1: PC-SDN1 (172.16.1.10) - Full access to everything
-SDN-Controller(config-ext-nacl)# permit ip host 172.16.1.10 any
+! Rule 1: PC-SDN1 (192.168.4.10) - Full access to everything
+SDN-Controller(config-ext-nacl)# permit ip host 192.168.4.10 any
 
-! Rule 2: PC-SDN2 (172.16.1.20) - Only Yellow area access
-SDN-Controller(config-ext-nacl)# permit ip host 172.16.1.20 192.168.0.0 0.0.0.255
+! Rule 2: PC-SDN2 (192.168.4.20) - Only Yellow area access
+SDN-Controller(config-ext-nacl)# permit ip host 192.168.4.20 192.168.0.0 0.0.0.255
 
-! Rule 3: PC-SDN3 (172.16.1.30) - Blocked from Blue area
-SDN-Controller(config-ext-nacl)# deny ip host 172.16.1.30 192.168.2.0 0.0.0.255
+! Rule 3: PC-SDN3 (192.168.4.30) - Blocked from Blue area
+SDN-Controller(config-ext-nacl)# deny ip host 192.168.4.30 192.168.2.0 0.0.0.255
 
 ! Allow remaining traffic
 SDN-Controller(config-ext-nacl)# permit ip any any
@@ -421,9 +421,9 @@ SDN-Controller(config-if)# exit
 
 | PC | IP Address | Policy Name | Access Level | Can Reach | Cannot Reach |
 |----|------------|-------------|--------------|-----------|--------------|
-| PC-SDN1 | 172.16.1.10 | Full Access | Unrestricted | All networks, ISP | None |
-| PC-SDN2 | 172.16.1.20 | Limited | Restricted | Yellow area only | Green, Blue, ISP |
-| PC-SDN3 | 172.16.1.30 | Blocked | Partial | Green, Yellow, ISP | Blue area |
+| PC-SDN1 | 192.168.4.10 | Full Access | Unrestricted | All networks, ISP | None |
+| PC-SDN2 | 192.168.4.20 | Limited | Restricted | Yellow area only | Green, Blue, ISP |
+| PC-SDN3 | 192.168.4.30 | Blocked | Partial | Green, Yellow, ISP | Blue area |
 
 ---
 
@@ -439,7 +439,7 @@ main# show ip ospf neighbor
 Neighbor ID     Pri   State           Dead Time   Address         Interface
 192.168.1.1       0   FULL/  -        00:00:32    11.11.11.2      Serial3/0
 192.168.2.1       0   FULL/  -        00:00:35    12.12.12.2      Serial2/0
-172.16.1.1        0   FULL/  -        00:00:38    10.0.0.2        Fa4/0
+192.168.4.1       0   FULL/  -        00:00:38    10.0.0.2        Fa4/0
 ```
 
 **Result:** All OSPF neighbors are in FULL state ✓
@@ -454,7 +454,7 @@ O    192.168.2.0/24 [110/65] via 12.12.12.2, Serial2/0
 C    192.168.0.0/24 is directly connected, FastEthernet1/0
 C    11.11.11.0/24 is directly connected, Serial3/0
 C    12.12.12.0/24 is directly connected, Serial2/0
-O    172.16.1.0/24 [110/2] via 10.0.0.2, FastEthernet4/0
+O    192.168.4.0/24 [110/2] via 10.0.0.2, FastEthernet4/0
 B    8.8.8.0/24 [20/0] via 10.10.10.1
 ```
 
@@ -486,7 +486,7 @@ C    10.10.10.0/24 is directly connected, FastEthernet0/0
 B    192.168.0.0/24 [20/0] via 10.10.10.2
 B    192.168.1.0/24 [20/0] via 10.10.10.2
 B    192.168.2.0/24 [20/0] via 10.10.10.2
-B    172.16.1.0/24 [20/0] via 10.10.10.2
+B    192.168.4.0/24 [20/0] via 10.10.10.2
 ```
 
 **Result:** ISP has learned all internal networks via BGP ✓
@@ -555,9 +555,9 @@ Trace complete.
 SDN-Controller# show access-lists
 
 Extended IP access list SDN_POLICY
-    10 permit ip host 172.16.1.10 any (45 match(es))
-    20 permit ip host 172.16.1.20 192.168.0.0 0.0.0.255 (12 match(es))
-    30 deny ip host 172.16.1.30 192.168.2.0 0.0.0.255 (8 match(es))
+    10 permit ip host 192.168.4.10 any (45 match(es))
+    20 permit ip host 192.168.4.20 192.168.0.0 0.0.0.255 (12 match(es))
+    30 deny ip host 192.168.4.30 192.168.2.0 0.0.0.255 (8 match(es))
     40 permit ip any any (23 match(es))
 ```
 
@@ -731,7 +731,7 @@ router bgp 65001
  network 192.168.0.0 mask 255.255.255.0
  network 192.168.1.0 mask 255.255.255.0
  network 192.168.2.0 mask 255.255.255.0
- network 172.16.1.0 mask 255.255.255.0
+ network 192.168.4.0 mask 255.255.255.0
  redistribute ospf 1
 !
 end
@@ -825,7 +825,6 @@ end
 
 ### B. Screenshots
 
-> [INSERT YOUR SCREENSHOTS HERE]
 
 - Figure 1: Network Topology in Packet Tracer
 - Figure 2: OSPF Neighbor Table
@@ -839,4 +838,4 @@ end
 - Figure 10: Failover Test - During
 - Figure 11: Failover Test - After
 
-**END OF REPORT**
+**Best Wishes**
